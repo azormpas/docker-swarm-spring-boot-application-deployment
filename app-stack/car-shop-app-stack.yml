@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  car-db:
+    image: mysql:8.0.22
+    hostname: car-db
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_DATABASE: car_db
+    volumes:
+      - my-data:/var/lib/mysql
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints: [node.role == manager]
+
+  car-shop-app:
+    image: azormpas/spring-boot-app:1.0.8
+    depends_on:
+      - car-db
+    ports:
+      - 8080:8080
+    networks:
+      - backend
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+
+volumes:
+  my-data:
+
+networks:
+  backend:
+
