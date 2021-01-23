@@ -4,8 +4,12 @@ services:
   car-db:
     image: mysql:8.0.22
     hostname: car-db
+    secrets:
+      - mysql_user
+      - mysql_password
     environment:
-      MYSQL_ROOT_PASSWORD: test
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+      MYSQL_USER_FILE: /run/secrets/mysql_user
       MYSQL_DATABASE: car_db
     volumes:
       - my-data:/var/lib/mysql
@@ -19,7 +23,7 @@ services:
         constraints: [node.role == manager]
 
   car-shop-app:
-    image: azormpas/spring-boot-app:1.0.8
+    image: azormpas/spring-boot-app:1.0.9
     depends_on:
       - car-db
     ports:
@@ -31,10 +35,21 @@ services:
       restart_policy:
         condition: on-failure
         max_attempts: 3
+    healthcheck:
+      test: curl --fail -s http://localhost:8080/health || exit 1
+      interval: 30s
+      timeout: 15s
+      retries: 3
 
 volumes:
   my-data:
 
 networks:
   backend:
+
+secrets:
+  mysql_user:
+    file: ./mysql_user.txt
+  mysql_password:
+    file: ./mysql_password.txt
 
